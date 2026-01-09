@@ -1,0 +1,27 @@
+services:
+  seed:
+    build:
+      context: ./seed
+      dockerfile: Dockerfile
+    container_name: seed
+    ports:
+      - "9000:9000"
+    networks:
+      - kvnet
+
+  kv-node:
+    build:
+      context: ./kv-store
+      dockerfile: Dockerfile
+    depends_on:
+      - seed
+    networks:
+      - kvnet
+    ports:
+      # ИЗМЕНЕНИЕ: Диапазон портов хоста (8080, 8081, 8082...) -> порт контейнера 8080
+      - "8080-8085:8080"
+    command: ["/app/kv-node", "/app/config.yaml"]
+
+networks:
+  kvnet:
+    driver: bridge

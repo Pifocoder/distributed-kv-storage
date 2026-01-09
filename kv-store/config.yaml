@@ -1,0 +1,8 @@
+cluster:
+  host: "kv-node"          # имя docker-сервиса kv-node в docker-compose
+  port: "8080"
+  health_interval_sec: 5
+  seed_addr: "seed:9000"   # адрес discovery-сервиса
+
+hash:
+  vnodes_per_node: 128
