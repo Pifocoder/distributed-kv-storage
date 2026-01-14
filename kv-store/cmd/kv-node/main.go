@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"kv-store/internal/rebalance"
 	"log"
 	"net/http"
 	"os"
@@ -43,12 +44,18 @@ func main() {
 	myID := dc.GetMyID()
 	log.Printf("Node initialized. ID: %s", myID)
 
+	rebalancer := rebalance.NewService(store, ring, hashring.NodeID(myID))
+	go rebalancer.Start()
+
+	defer rebalancer.Stop()
+
 	ring.UpdateRing(initialNodes)
 
 	go func() {
 		for nodes := range nodesChan {
 			ring.UpdateRing(nodes)
 			log.Printf("Cluster updated. Peers: %d", len(nodes))
+			go rebalancer.Trigger()
 		}
 	}()
 

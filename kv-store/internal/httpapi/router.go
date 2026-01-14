@@ -8,5 +8,6 @@ func NewRouter(h *Handler) http.Handler {
 	mux.HandleFunc("/get", h.Get)
 	mux.HandleFunc("/delete", h.Delete)
 	mux.HandleFunc("/health", h.Health)
+	mux.HandleFunc("/internal/put", h.InternalPut)
 	return mux
 }

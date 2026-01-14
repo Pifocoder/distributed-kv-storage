@@ -17,7 +17,6 @@ type HashRing struct {
 	ring       []uint32
 	hashToNode map[uint32]NodeID
 
-	// Храним не пустую структуру, а адрес ноды
 	nodes map[NodeID]string
 }
 
@@ -35,7 +34,6 @@ func hash(s string) uint32 {
 	return binary.BigEndian.Uint32(h[:4])
 }
 
-// UpdateRing теперь принимает структуру с адресами
 func (r *HashRing) UpdateRing(activeNodes []cluster.NodeInfo) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -47,7 +45,6 @@ func (r *HashRing) UpdateRing(activeNodes []cluster.NodeInfo) {
 
 	changed := false
 
-	// 2. Удаляем ноды
 	nodesToRemove := []NodeID{}
 	for id := range r.nodes {
 		if _, exists := newSet[id]; !exists {
@@ -60,14 +57,12 @@ func (r *HashRing) UpdateRing(activeNodes []cluster.NodeInfo) {
 		changed = true
 	}
 
-	// 3. Добавляем новые ноды или обновляем адреса
 	for id, addr := range newSet {
 		oldAddr, exists := r.nodes[id]
 		if !exists {
 			r.addNode(id, addr)
 			changed = true
 		} else if oldAddr != addr {
-			// Если ID тот же, но сменился IP (редкий кейс, но возможный)
 			r.nodes[id] = addr
 		}
 	}
@@ -102,24 +97,16 @@ func (r *HashRing) addNode(id NodeID, addr string) {
 	for i := 0; i < r.vnodes; i++ {
 		vID := fmt.Sprintf("%s#%d", id, i)
 		h := hash(vID)
+
+		if _, exists := r.hashToNode[h]; exists {
+			continue
+		}
+
 		r.ring = append(r.ring, h)
 		r.hashToNode[h] = id
 	}
 }
 
-func (r *HashRing) AddNode(id NodeID, addr string) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if _, ok := r.nodes[id]; ok {
-		return
-	}
-
-	r.addNode(id, addr)
-	sort.Slice(r.ring, func(i, j int) bool { return r.ring[i] < r.ring[j] })
-}
-
-// GetNodeAddr возвращает адрес ноды по её ID
 func (r *HashRing) GetNodeAddr(id NodeID) (string, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

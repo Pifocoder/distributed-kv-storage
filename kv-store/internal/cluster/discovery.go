@@ -13,29 +13,6 @@ import (
 
 var ErrUnauthorized = errors.New("node unauthorized")
 
-type registerResponse struct {
-	ID string `json:"id"`
-}
-
-type heartbeatRequest struct {
-	ID string `json:"id"`
-}
-
-type nodeDTO struct {
-	ID   string `json:"id"`
-	Addr string `json:"addr"` // Добавили адрес
-}
-
-type heartbeatResponse struct {
-	ActiveNodes []nodeDTO `json:"active_nodes"`
-}
-
-// NodeInfo — структура, которую мы отдаем наружу (в канал)
-type NodeInfo struct {
-	ID   string
-	Addr string
-}
-
 type DiscoveryClient struct {
 	seedURL string
 	myID    string
@@ -50,7 +27,6 @@ func NewDiscoveryClient(seedAddr string) *DiscoveryClient {
 	}
 }
 
-// Start теперь пишет в канал []NodeInfo, содержащий и ID, и Адрес
 func (d *DiscoveryClient) Start(interval time.Duration, updates chan<- []NodeInfo) {
 	d.ensureRegistered()
 
@@ -153,7 +129,6 @@ func (d *DiscoveryClient) heartbeat() ([]NodeInfo, error) {
 		return nil, err
 	}
 
-	// Преобразуем DTO в наш формат
 	infos := make([]NodeInfo, len(res.ActiveNodes))
 	for i, n := range res.ActiveNodes {
 		infos[i] = NodeInfo{ID: n.ID, Addr: n.Addr}
